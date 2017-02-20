@@ -26,7 +26,7 @@ namespace TogetherPaaS
         {
             Customer customer = null;
             List<Customer> customerList = null;
-            HttpResponseMessage response = await _client.PostAsJsonAsync(_path, customer);
+            HttpResponseMessage response = await _client.PostAsJsonAsync("api/GetCustomers", customer);
             if (response.IsSuccessStatusCode)
             {
                 customerList = await response.Content.ReadAsAsync<List<Customer>>();
