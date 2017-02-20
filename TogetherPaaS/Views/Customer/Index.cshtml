@@ -53,9 +53,9 @@
             var $ctrl = $(this);
             if (confirm('Do you really want to delete this item?')) {
                 $.ajax({
-                    url: '@Url.Action("Delete")',
+                    url: '@Url.Action("DeleteCase")',
                     type: 'POST',
-                    data: { id: $(this).data('id') }
+                    data: { caseId: $(this).data('id') }
                 }).done(function (data) {                    
                     if (data.Result == "OK") {
                         $ctrl.closest('tr').remove();                        

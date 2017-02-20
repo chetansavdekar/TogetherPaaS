@@ -7,26 +7,27 @@ using System.Net.Http.Headers;
 using TogetherUpload.Models;
 using System.Threading.Tasks;
 using System.IO;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace TogetherPaaS
 {
     public class APIServices
     {
 
-        private static HttpClient _client = new HttpClient();
-        private static string _path = null;
-        public APIServices()
+        private static HttpClient _client = new HttpClient();     
+        static APIServices()
         {
-            _client.BaseAddress = new Uri("http://localhost:55268/");
+            _client.BaseAddress = new Uri("http://localhost:20028/");
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         public static async Task<List<Customer>> GetCustomers()
         {
-            Customer customer = null;
+           // Customer customer = null;
             List<Customer> customerList = null;
-            HttpResponseMessage response = await _client.PostAsJsonAsync("api/GetCustomers", customer);
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/GetCustomers", null);
             if (response.IsSuccessStatusCode)
             {
                 customerList = await response.Content.ReadAsAsync<List<Customer>>();
@@ -67,10 +68,10 @@ namespace TogetherPaaS
             var objectContent = new ObjectContent<Customer>(customer, new System.Net.Http.Formatting.JsonMediaTypeFormatter());
             content.Add(objectContent);
             
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _path);
-            request.Content = content;
+            //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _path);
+            //request.Content = content;
 
-            HttpResponseMessage response = await _client.PostAsync(_path, content);
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/CreateCustomersWithDocumentUpload", content);
             if (response.IsSuccessStatusCode)
             {
                 return true;
@@ -79,25 +80,93 @@ namespace TogetherPaaS
             return false;            
         }
 
+        internal static async Task<bool> DeleteCase(int caseId)
+        {
+            Customer customer = new Customer();
+            customer.CaseId = caseId;
+            var json = JsonConvert.SerializeObject(customer);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/DeleteCase", content);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            return false;
+        }
 
-        //public static StreamContent GetImageStreamContent(string filePath)
-        //{         
-        //    StreamContent imageStreamContent = null;
-        //    if (File.Exists(filePath))
-        //    {
-        //        FileStream fs = new FileStream(filePath, FileMode.Open);
-        //        imageStreamContent = new StreamContent(fs);          
-        //        fs = null;
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
+        internal static async Task<bool> DeleteFile(string id)
+        {           
+            LegalDocument legalDoc = new LegalDocument();
+            legalDoc.Id = new Guid(id);
+            var json = JsonConvert.SerializeObject(legalDoc);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/DeleteFile", content);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+            return false;
+        }
 
-        //    return imageStreamContent;
-        //}
+        public static async Task<Customer> GetCustomerWithCaseId(int id)
+        {
+            // Customer customer = null;
+            Customer customer = new Customer();
+            customer.CaseId = id;
+            var json = JsonConvert.SerializeObject(customer);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/GetCustomerWithCaseId", content);
+            if (response.IsSuccessStatusCode)
+            {
+                customer = await response.Content.ReadAsAsync<Customer>();
+            }
+            return customer;
+        }
 
+        public static async Task<bool> EditCustomer(Customer customer, HttpFileCollectionBase uploadedFiles)
+        {
+            var content = new MultipartContent();
+            List<LegalDocument> legalDocs = new List<LegalDocument>();
+            for (int i = 0; i < uploadedFiles.Count; i++)
+            {
+                var file = uploadedFiles[i];
 
+                if (file != null && file.ContentLength > 0)
+                {
+                    var fileName = Path.GetFileName(file.FileName);
+                    LegalDocument legalDoc = new LegalDocument()
+                    {
+                        FileName = fileName,
+                        Extension = Path.GetExtension(fileName),
+                        Id = Guid.NewGuid()
+                    };
+                    legalDocs.Add(legalDoc);
+
+                    StreamContent streamContent = new StreamContent(file.InputStream);
+
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    ContentDispositionHeaderValue cd = new ContentDispositionHeaderValue("attachment");
+                    cd.FileName = legalDoc.Id + legalDoc.Extension;
+                    streamContent.Headers.ContentDisposition = cd;
+                    content.Add(streamContent);
+                }
+            }
+
+            customer.LegalDocuments = legalDocs;
+            var objectContent = new ObjectContent<Customer>(customer, new System.Net.Http.Formatting.JsonMediaTypeFormatter());
+            content.Add(objectContent);
+
+            //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _path);
+            //request.Content = content;
+
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/EditCustomerWithDocumentUpload", content);
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            return false;
+        }
 
     }
 }
