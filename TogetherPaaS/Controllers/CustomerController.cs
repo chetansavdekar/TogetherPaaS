@@ -78,8 +78,7 @@ namespace TogetherUpload.Controllers
 
         [HttpPost]
         public async Task<JsonResult> DeleteFile(string id)
-        {           
-
+        {
             if (String.IsNullOrEmpty(id))
             {
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
