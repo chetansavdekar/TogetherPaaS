@@ -12,6 +12,10 @@ using Microsoft.WindowsAzure.Storage;
 using System.Net;
 using api.TogetherPaaS.Models;
 using api.TogetherPaaS.Common;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace api.TogetherPaaS.Controllers
 {
@@ -26,10 +30,38 @@ namespace api.TogetherPaaS.Controllers
 
 
         [HttpPost]
-        public HttpResponseMessage UploadDocument()
+        public HttpResponseMessage RetriveCloudDocument(Customer customer)
         {
 
-            Customer customer = GetPostData();
+            Customer localcustomer = SqlDBRepository.GetCustomer(customer.CaseId);
+
+            CloudBlobContainer container = GetContainer(localcustomer);
+            //AzureDocumentResponse docResponse = new AzureDocumentResponse();
+
+            for (int i = 0; i < localcustomer.LegalDocuments.Count; i++)
+            {
+                localcustomer.LegalDocuments[i].DocumentData = GetBlob(container, customer.CaseId);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.OK, localcustomer);
+
+        }
+
+        private static byte[] GetBlob(CloudBlobContainer container, string caseId)
+        {
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference("case" + caseId.ToString().ToLower());
+            blockBlob.FetchAttributes();
+            byte[] byteData = new byte[blockBlob.Properties.Length];
+            blockBlob.DownloadToByteArray(byteData, 0);
+            return byteData;
+
+        }
+
+        [HttpPost]
+        public async Task<HttpResponseMessage> CreateCustomerWithDocumentUpload()
+        {
+
+            Customer customer = await ProcessClientData();
             CloudBlobContainer container = GetContainer(customer);
 
             container.CreateIfNotExists();
@@ -80,16 +112,101 @@ namespace api.TogetherPaaS.Controllers
 
         }
 
-        public Customer GetPostData()
+        private async Task<Customer> ProcessClientData()
         {
-            HttpRequestMessage request = this.Request;
+            Customer customer = null;
 
-            Customer customer = new Customer();
-            customer.CaseId = HttpContext.Current.Request.Form["CaseId"].ToString();
-            customer.FirstName = HttpContext.Current.Request.Form["FirstName"].ToString();
-            customer.LastName = HttpContext.Current.Request.Form["LastName"].ToString();
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+
+            var outerMultipart = await Request.Content.ReadAsMultipartAsync();
+
+            foreach (var multipart in outerMultipart.Contents)
+            {
+                if (multipart.Headers.ContentType.MediaType == "application/json")
+                {
+                    String jsonObj = await multipart.ReadAsStringAsync();
+                    customer = JsonConvert.DeserializeObject<Customer>(jsonObj);
+                    //if (customer == null)
+                    //{
+                    //   // return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Fabric details are not provided.");
+                    //}
+                    //else
+                    //{
+                    //    if (Convert.ToInt32(customer.CaseId) > 0)
+                    //    {
+                    //        fabric.ImageGuid = imageGuid;
+                    //        _fabricBuyerSvc.SaveFabricBuyerList(fabric);
+                    //    }
+                    //    else
+                    //    {
+                    //        return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "User Id not provided.");
+                    //    }
+                    //}
+                }
+                else if (multipart.Headers.ContentType.MediaType == "application/octet-stream")
+                {
+
+                    //var result = await Request.Content.ReadAsMultipartAsync();
+
+                    //var provider = new MultipartMemoryStreamProvider();
+                    //await Request.Content.ReadAsMultipartAsync(provider);
+
+
+                    //var provider = GetMultipartProvider();
+                    //Stream filestream = null;
+
+                    //using (Stream stream = new MemoryStream())
+                    //{
+                    //    foreach (HttpContent content in provider.Contents)
+                    //    {
+                    //        BinaryFormatter bFormatter = new BinaryFormatter();
+                    //        bFormatter.Serialize(stream, content.ReadAsStreamAsync().Result);
+                    //        stream.Position = 0;
+                    //        filestream = stream;
+                    //    }
+                    //}
+
+                    //string directoryPath = _rootImagePath + "/" + Convert.ToString(fabric.UserId);
+                    //string thumbnailDirPath = _rootThumbnailImagePath + "/" + Convert.ToString(fabric.UserId);
+                    //string fileName = fabric.ImageGuid + ".jpg";
+                    //DirectoryInfo di = new DirectoryInfo(directoryPath);
+                    //if (!di.Exists)
+                    //{
+                    //    di.Create();
+                    //}
+                    //using (var file = File.Create(directoryPath + "/" + fileName))
+                    //    await multipart.CopyToAsync(file);
+
+                    //DirectoryInfo diThumbnail = new DirectoryInfo(thumbnailDirPath);
+                    //if (!diThumbnail.Exists)
+                    //{
+                    //    diThumbnail.Create();
+                    //}
+
+                    //using (ImageProcessor imgProc = new ImageProcessor())
+                    //    imgProc.ResizeImage(directoryPath, fileName, thumbnailDirPath, fileName, 150, 150, true, false);
+
+                    //di = null;
+                    //diThumbnail = null;
+
+                }               
+            }
 
             return customer;
+
+            //HttpRequestMessage request = this.Request;
+
+            //Customer customer = new Customer();
+            //customer.CaseId = HttpContext.Current.Request.Form["CaseId"].ToString();
+            //customer.FirstName = HttpContext.Current.Request.Form["FirstName"].ToString();
+            //customer.LastName = HttpContext.Current.Request.Form["LastName"].ToString();
+
+            //return customer;
+
+
             //var httpPostedFile = HttpContext.Current.Request.Files["file"];
             //if (!request.Content.IsMimeMultipartContent())
             //{
@@ -104,6 +221,15 @@ namespace api.TogetherPaaS.Controllers
             //return saveCasePOCRequest;
 
         }
+
+        //private MultipartFormDataStreamProvider GetMultipartProvider()
+        //{
+        //    var uploadFolder = "~/App_Data/Tmp/FileUploads"; // you could put this to web.config
+        //    var root = HttpContext.Current.Server.MapPath(uploadFolder);
+        //    Directory.CreateDirectory(root);
+        //    return new MultipartFormDataStreamProvider(root);
+        //}
+
 
         private static CloudBlobContainer GetContainer(Customer customer)
         {
@@ -134,35 +260,6 @@ namespace api.TogetherPaaS.Controllers
         //    //    new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
 
         //}
-
-
-
-        [HttpPost]
-        public HttpResponseMessage GetCloudDocument(Customer customer)
-        {
-
-            Customer localcustomer = SqlDBRepository.GetCustomer(customer.CaseId);
-
-            CloudBlobContainer container = GetContainer(localcustomer);
-            //AzureDocumentResponse docResponse = new AzureDocumentResponse();
-
-            for (int i = 0; i < localcustomer.LegalDocuments.Count; i++)
-            {
-                localcustomer.LegalDocuments[i].DocumentData = GetBlob(container, customer.CaseId);
-            }
-
-            return Request.CreateResponse(HttpStatusCode.OK, localcustomer);
-           
-        }
-
-        private static byte[] GetBlob(CloudBlobContainer container, string caseId)
-        {
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference("case" + caseId.ToString().ToLower());
-            blockBlob.FetchAttributes();
-            byte[] byteData = new byte[blockBlob.Properties.Length];
-            blockBlob.DownloadToByteArray(byteData, 0);
-            return byteData;
-
-        }
+        
     }
 }

@@ -68,10 +68,7 @@ namespace TogetherPaaS
             var objectContent = new ObjectContent<Customer>(customer, new System.Net.Http.Formatting.JsonMediaTypeFormatter());
             content.Add(objectContent);
             
-            //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, _path);
-            //request.Content = content;
-
-            HttpResponseMessage response = await _client.PostAsync("api/Upload/CreateCustomersWithDocumentUpload", content);
+            HttpResponseMessage response = await _client.PostAsync("api/Upload/CreateCustomerWithDocumentUpload", content);
             if (response.IsSuccessStatusCode)
             {
                 return true;
