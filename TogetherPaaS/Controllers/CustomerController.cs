@@ -99,7 +99,6 @@ namespace TogetherUpload.Controllers
         [HttpPost]
         public async Task<JsonResult> DeleteCase(int caseId)
         {
-
             if (caseId == 0)
             {
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
