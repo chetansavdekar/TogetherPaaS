@@ -17,7 +17,7 @@ namespace api.TogetherPaaS.Common
 
         public static bool InsertCustomer(Customer customer)
         {
-            string INSERT = "INSERT INTO Customer (CustomerId, FirstName, LastName) VALUES (@customerId, @firstName, @lastName)";
+            string INSERT = "INSERT INTO Customer (CustomerId, FirstName, LastName, CaseId) VALUES (@customerId, @firstName, @lastName, @CaseId)";
 
             using (SqlConnection sqlConnection = new SqlConnection(sqlConnectionString))
             {
@@ -28,7 +28,7 @@ namespace api.TogetherPaaS.Common
                     sqlCommand.Parameters.Add("@customerId", SqlDbType.VarChar).Value = customer.CustomerId;
                     sqlCommand.Parameters.Add("@firstName", SqlDbType.VarChar).Value = customer.FirstName;
                     sqlCommand.Parameters.Add("@lastName", SqlDbType.VarChar).Value = customer.LastName;
-                    //sqlCommand.Parameters.Add("@brokerId", SqlDbType.VarChar).Value = customer.BrokerId;
+                    sqlCommand.Parameters.Add("@CaseId", SqlDbType.VarChar).Value = customer.CaseId;
                     sqlCommand.ExecuteNonQuery();
                 }
 
@@ -59,11 +59,15 @@ namespace api.TogetherPaaS.Common
             return true;
         }
 
-        public static List<Customer> GetCustomer()
+        public static Customer GetCustomer(string caseId)
         {
-            string GetQuery = "Select * from Customer";
-            List<Customer> customerList = new List<Customer>();
+            string GetQuery = "Select * from Customer where CaseId=" + caseId;
+
+            //List<Customer> customerList = new List<Customer>();
             Customer customer = null;
+
+            List<LegalDocument> legalDocumentList = new List<LegalDocument>();
+            LegalDocument legalDocument = null;
 
             using (SqlConnection connection = new SqlConnection(sqlConnectionString))
             {
@@ -75,15 +79,29 @@ namespace api.TogetherPaaS.Common
                 {
                     customer = new Customer();
                     customer.CustomerId = reader["CustomerId"].ToString();
+                    customer.CaseId = reader["CaseId"].ToString();
                     customer.FirstName = reader["FirstName"].ToString();
                     customer.LastName = reader["LastName"].ToString();
-                    //customer.BrokerId = reader["BrokerId"].ToString();
+                }
 
-                    customerList.Add(customer);
+                GetQuery = "SELECT * FROM CUSTOMER CUST INNER JOIN LegalDocument ld ON ld.CustomerId = cust.CustomerId WHERE Cust.CustomerId =" + customer.CustomerId;
+
+                command = new SqlCommand(GetQuery, connection);
+                command.Connection.Open();
+                reader = command.ExecuteReader();
+
+                while (reader.Read())
+                {
+                    legalDocument = new LegalDocument();
+                    legalDocument.FileName = reader["FileName"].ToString();
+                    legalDocument.ContentType = reader["ContentType"].ToString();
+                    legalDocument.StoragePath = reader["StoragePath"].ToString();
+                   
+                    customer.LegalDocuments.Add(legalDocument);
                 }
             }
 
-            return customerList;
+            return customer;
         }
     }
 }

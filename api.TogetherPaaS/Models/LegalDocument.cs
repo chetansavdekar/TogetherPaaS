@@ -28,6 +28,8 @@ namespace api.TogetherPaaS.Models
 
         public Stream fileStream { get; set; }
 
+        public byte[] DocumentData { get; set; }
+
         public string AzureFilePath { get; set; }
     }
 }

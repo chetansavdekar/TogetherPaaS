@@ -140,22 +140,24 @@ namespace api.TogetherPaaS.Controllers
         [HttpPost]
         public HttpResponseMessage GetCloudDocument(Customer customer)
         {
-            CloudBlobContainer container = GetContainer(customer);
+
+            Customer localcustomer = SqlDBRepository.GetCustomer(customer.CaseId);
+
+            CloudBlobContainer container = GetContainer(localcustomer);
             //AzureDocumentResponse docResponse = new AzureDocumentResponse();
-            //docResponse.EmbeddedResult = GetBlob(container, customer);
-            //docResponse.DocumentName = caseDocRequest.FileName;
-            //return Request.CreateResponse(HttpStatusCode.OK, docResponse);
 
-            return new HttpResponseMessage()
+            for (int i = 0; i < localcustomer.LegalDocuments.Count; i++)
             {
-                StatusCode = HttpStatusCode.OK
+                localcustomer.LegalDocuments[i].DocumentData = GetBlob(container, customer.CaseId);
+            }
 
-            };
+            return Request.CreateResponse(HttpStatusCode.OK, localcustomer);
+           
         }
 
-        private static byte[] GetBlob(CloudBlobContainer container, Customer customer)
+        private static byte[] GetBlob(CloudBlobContainer container, string caseId)
         {
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference("case" + customer.CaseId.ToString().ToLower());
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference("case" + caseId.ToString().ToLower());
             blockBlob.FetchAttributes();
             byte[] byteData = new byte[blockBlob.Properties.Length];
             blockBlob.DownloadToByteArray(byteData, 0);
