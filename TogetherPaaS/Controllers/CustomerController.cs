@@ -16,8 +16,6 @@ namespace TogetherUpload.Controllers
 {
     public class CustomerController : Controller
     {
-        private List<Customer> _listCust = null;
-       
         public ActionResult Index()
         {           
            return View(APIServices.GetCustomers());
