@@ -13,23 +13,19 @@ namespace api.TogetherPaaS.Models
 
         public string ContentType { get; set; }
 
+        public string Extension { get; set; }
+
         /// <summary>
         /// Passport, Driving License etc
         /// </summary>
         public string DocumentType { get; set; }
 
         public string StoragePath { get; set; }
-
-
-        /// <summary>
-        /// Need to check whether this is required.
-        /// </summary>
-        public string FilePath { get; set; }
-
+                
         public Stream fileStream { get; set; }
 
         public byte[] DocumentData { get; set; }
 
-        public string AzureFilePath { get; set; }
+        
     }
 }

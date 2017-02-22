@@ -35,13 +35,12 @@ namespace TogetherUpload.Controllers
         {
             if (ModelState.IsValid)
             {
-                //Server.MapPath("~/App_Data/Upload/"
-                bool result = await APIServices.CreateCustomers(customer, Request.Files).ConfigureAwait(false);                
+                bool result = await APIServices.CreateCustomers(customer, Request.Files).ConfigureAwait(false);
 
-                return RedirectToAction("Index");
+                return View(customer);
             }
+            return RedirectToAction("Index");
 
-            return View(customer);
         }
 
         public async Task<ActionResult> Edit(int? id)
