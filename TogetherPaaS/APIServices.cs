@@ -46,16 +46,24 @@ namespace TogetherPaaS
                 if (file != null && file.ContentLength > 0)
                 {
                     var fileName = Path.GetFileName(file.FileName);
+
+           //***********************  OCR Calling and Processing ******************************//
+
+                    string ocrJsonResult = await OCRServices.CallOCR(file.InputStream);
+                    string docType = OCRServices.ProcessOCR(ocrJsonResult);
+
+            //***********************  OCR Calling and Processing ******************************//
+
                     LegalDocument legalDoc = new LegalDocument()
                     {
                         FileName = fileName,
                         Extension = Path.GetExtension(fileName),
                         Id = Guid.NewGuid(),
                         DocumentData = GetFileBytes(file.InputStream),
-                        DocumentType = OCRCallApi(i),
+                        DocumentType = docType, // changed here for document type
                         ContentType = file.ContentType
                 };
-                    legalDocs.Add(legalDoc);                   
+                    legalDocs.Add(legalDoc);                 
 
                     //StreamContent streamContent = new StreamContent(file.InputStream);
 
