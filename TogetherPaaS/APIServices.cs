@@ -50,17 +50,20 @@ namespace TogetherPaaS
                     {
                         FileName = fileName,
                         Extension = Path.GetExtension(fileName),
-                        Id = Guid.NewGuid()
-                    };
+                        Id = Guid.NewGuid(),
+                        DocumentData = GetFileBytes(file.InputStream),
+                        DocumentType = OCRCallApi(i),
+                        ContentType = file.ContentType
+                };
                     legalDocs.Add(legalDoc);                   
 
-                    StreamContent streamContent = new StreamContent(file.InputStream);
+                    //StreamContent streamContent = new StreamContent(file.InputStream);
 
-                    streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-                    ContentDispositionHeaderValue cd = new ContentDispositionHeaderValue("attachment");                  
-                    cd.FileName = legalDoc.Id + legalDoc.Extension;
-                    streamContent.Headers.ContentDisposition = cd;
-                    content.Add(streamContent);
+                    //streamContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+                    //ContentDispositionHeaderValue cd = new ContentDispositionHeaderValue("attachment");                  
+                    //cd.FileName = legalDoc.Id + legalDoc.Extension;
+                    //streamContent.Headers.ContentDisposition = cd;
+                    //content.Add(streamContent);
                 }
             }
 
@@ -75,6 +78,26 @@ namespace TogetherPaaS
             }
 
             return false;            
+        }
+
+            private static string OCRCallApi(int i)
+            {
+                if (i == 0)
+                    return "Passport";
+                else
+                    return "AddressProof";
+            }
+
+        public static byte[] GetFileBytes(System.IO.Stream docStream)
+        {
+            byte[] result;
+            using (var streamReader = new System.IO.MemoryStream())
+            {
+                docStream.CopyTo(streamReader);
+                result = streamReader.ToArray();
+            }
+            docStream.Position = 0;
+            return result;
         }
 
         internal static async Task<bool> DeleteCase(int caseId)

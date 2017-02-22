@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 namespace TogetherUpload.Models
 {
     public class Customer
-    {   
+    {
+        [Required(ErrorMessage = "Please Enter Case Id")]       
         public int CaseId { get; set; }
 
         [Required(ErrorMessage = "Please Enter Your First Name")]        

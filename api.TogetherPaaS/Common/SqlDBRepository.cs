@@ -17,32 +17,39 @@ namespace api.TogetherPaaS.Common
 
         public static bool InsertCustomer(Customer customer)
         {
-            string INSERT = "INSERT INTO Customer (CustomerId, FirstName, LastName, CaseId) VALUES (@customerId, @firstName, @lastName, @CaseId)";
-
-            using (SqlConnection sqlConnection = new SqlConnection(sqlConnectionString))
+            try
             {
-                sqlConnection.Open();
+                int customerId = 0;
+                string INSERT = "INSERT INTO Customer (FirstName, LastName, CaseId) VALUES (@firstName, @lastName, @CaseId); SELECT SCOPE_IDENTITY()";
 
-                using (SqlCommand sqlCommand = new SqlCommand(INSERT, sqlConnection))
+                using (SqlConnection sqlConnection = new SqlConnection(sqlConnectionString))
                 {
-                    sqlCommand.Parameters.Add("@customerId", SqlDbType.VarChar).Value = customer.CustomerId;
-                    sqlCommand.Parameters.Add("@firstName", SqlDbType.VarChar).Value = customer.FirstName;
-                    sqlCommand.Parameters.Add("@lastName", SqlDbType.VarChar).Value = customer.LastName;
-                    sqlCommand.Parameters.Add("@CaseId", SqlDbType.VarChar).Value = customer.CaseId;
-                    sqlCommand.ExecuteNonQuery();
-                }
+                    sqlConnection.Open();
 
-                foreach (LegalDocument legalDoc in customer.LegalDocuments)
-                {
-                    InsertLegalDocs(customer.CustomerId, legalDoc, sqlConnection);
+                    using (SqlCommand sqlCommand = new SqlCommand(INSERT, sqlConnection))
+                    {
+                        sqlCommand.Parameters.Add("@firstName", SqlDbType.VarChar).Value = customer.FirstName;
+                        sqlCommand.Parameters.Add("@lastName", SqlDbType.VarChar).Value = customer.LastName;
+                        sqlCommand.Parameters.Add("@CaseId", SqlDbType.VarChar).Value = customer.CaseId;
+
+                        customerId = Convert.ToInt32(sqlCommand.ExecuteScalar());
+                   }
+
+                    foreach (LegalDocument legalDoc in customer.LegalDocuments)
+                    {
+                        InsertLegalDocs(customerId, legalDoc, sqlConnection);
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
 
             }
 
             return true;
         }
 
-        private static bool InsertLegalDocs(string customerId, LegalDocument legalDocument, SqlConnection sqlConn)
+        private static bool InsertLegalDocs(int customerId, LegalDocument legalDocument, SqlConnection sqlConn)
         {
             string INSERT = "INSERT INTO LegalDocument (CustomerId, FileName, ContentType, StoragePath) VALUES (@CustomerId, @FileName, @ContentType, @StoragePath)";
 

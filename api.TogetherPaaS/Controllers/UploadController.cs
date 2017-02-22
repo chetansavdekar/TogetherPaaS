@@ -60,7 +60,6 @@ namespace api.TogetherPaaS.Controllers
         [HttpPost]
         public async Task<HttpResponseMessage> CreateCustomerWithDocumentUpload()
         {
-
             Customer customer = await ProcessClientData();
             CloudBlobContainer container = GetContainer(customer);
 
@@ -68,7 +67,7 @@ namespace api.TogetherPaaS.Controllers
 
             foreach (var item in customer.LegalDocuments)
             {
-                item.AzureFilePath = UploadBlob(container, customer.CaseId, item);
+                item.StoragePath = UploadBlob(container, customer.CaseId, item);
             }
 
             bool status = SqlDBRepository.InsertCustomer(customer);
@@ -79,23 +78,20 @@ namespace api.TogetherPaaS.Controllers
                 
             };
 
-            //CaseDocumentRequest caseDocRequest = GetPostData();
-            //CloudBlobContainer container = GetContainer(caseDocRequest);
-
-            //container.CreateIfNotExists();
-
-            //caseDocRequest.AzureUri = UploadBlob(container, caseDocRequest);
-            ////Call save to database
-            //var casePOCs = this.casePOCUnitOfWork.SaveCasePOC(caseDocRequest);
-            //return Request.CreateResponse(HttpStatusCode.OK, casePOCs);
-        }
+       }
 
         private static string UploadBlob(CloudBlobContainer container, string CaseId, LegalDocument legalDocument)
         {
             CloudBlockBlob blockBlob = container.GetBlockBlobReference(CaseId.ToString() + "_" + legalDocument.DocumentType);
+            Stream stream = new MemoryStream(legalDocument.DocumentData);
+            blockBlob.UploadFromStream(stream);
 
-            blockBlob.UploadFromStream(legalDocument.fileStream);
+            string azureuri = blockBlob.Uri.AbsoluteUri.ToString();
+
+            return azureuri;
             
+            //blockBlob.UploadFromByteArray(legalDocument.DocumentData, 0, 1);
+
             //Byte Array
             //using (var stream = new MemoryStream(saveCasePOCRequest.FileStream, writable: false))
 
@@ -105,16 +101,11 @@ namespace api.TogetherPaaS.Controllers
             //{
             //    blockBlob.UploadFromStream(stream);
             //}
-
-            string azureuri = blockBlob.Uri.AbsoluteUri.ToString();
-
-            return azureuri;
-
         }
 
         private async Task<Customer> ProcessClientData()
         {
-            Customer customer = null;
+            Customer customer = new Customer();
 
             if (!Request.Content.IsMimeMultipartContent())
             {
@@ -123,113 +114,55 @@ namespace api.TogetherPaaS.Controllers
 
             var outerMultipart = await Request.Content.ReadAsMultipartAsync();
 
-            foreach (var multipart in outerMultipart.Contents)
-            {
-                if (multipart.Headers.ContentType.MediaType == "application/json")
-                {
-                    String jsonObj = await multipart.ReadAsStringAsync();
-                    customer = JsonConvert.DeserializeObject<Customer>(jsonObj);
-                    //if (customer == null)
-                    //{
-                    //   // return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Fabric details are not provided.");
-                    //}
-                    //else
-                    //{
-                    //    if (Convert.ToInt32(customer.CaseId) > 0)
-                    //    {
-                    //        fabric.ImageGuid = imageGuid;
-                    //        _fabricBuyerSvc.SaveFabricBuyerList(fabric);
-                    //    }
-                    //    else
-                    //    {
-                    //        return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "User Id not provided.");
-                    //    }
-                    //}
-                }
-                else if (multipart.Headers.ContentType.MediaType == "application/octet-stream")
-                {
+            var multipart = outerMultipart.Contents[0];
 
-                    //var result = await Request.Content.ReadAsMultipartAsync();
-
-                    //var provider = new MultipartMemoryStreamProvider();
-                    //await Request.Content.ReadAsMultipartAsync(provider);
-
-
-                    //var provider = GetMultipartProvider();
-                    //Stream filestream = null;
-
-                    //using (Stream stream = new MemoryStream())
-                    //{
-                    //    foreach (HttpContent content in provider.Contents)
-                    //    {
-                    //        BinaryFormatter bFormatter = new BinaryFormatter();
-                    //        bFormatter.Serialize(stream, content.ReadAsStreamAsync().Result);
-                    //        stream.Position = 0;
-                    //        filestream = stream;
-                    //    }
-                    //}
-
-                    //string directoryPath = _rootImagePath + "/" + Convert.ToString(fabric.UserId);
-                    //string thumbnailDirPath = _rootThumbnailImagePath + "/" + Convert.ToString(fabric.UserId);
-                    //string fileName = fabric.ImageGuid + ".jpg";
-                    //DirectoryInfo di = new DirectoryInfo(directoryPath);
-                    //if (!di.Exists)
-                    //{
-                    //    di.Create();
-                    //}
-                    //using (var file = File.Create(directoryPath + "/" + fileName))
-                    //    await multipart.CopyToAsync(file);
-
-                    //DirectoryInfo diThumbnail = new DirectoryInfo(thumbnailDirPath);
-                    //if (!diThumbnail.Exists)
-                    //{
-                    //    diThumbnail.Create();
-                    //}
-
-                    //using (ImageProcessor imgProc = new ImageProcessor())
-                    //    imgProc.ResizeImage(directoryPath, fileName, thumbnailDirPath, fileName, 150, 150, true, false);
-
-                    //di = null;
-                    //diThumbnail = null;
-
-                }               
-            }
+            String jsonObj = await multipart.ReadAsStringAsync();
+            customer = JsonConvert.DeserializeObject<Customer>(jsonObj);
 
             return customer;
 
-            //HttpRequestMessage request = this.Request;
-
-            //Customer customer = new Customer();
-            //customer.CaseId = HttpContext.Current.Request.Form["CaseId"].ToString();
-            //customer.FirstName = HttpContext.Current.Request.Form["FirstName"].ToString();
-            //customer.LastName = HttpContext.Current.Request.Form["LastName"].ToString();
-
-            //return customer;
-
-
-            //var httpPostedFile = HttpContext.Current.Request.Files["file"];
-            //if (!request.Content.IsMimeMultipartContent())
+            //foreach (var multipart in outerMultipart.Contents)
             //{
-            //    throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
-            //}
-            //CaseDocumentRequest saveCasePOCRequest = new CaseDocumentRequest();
-            //saveCasePOCRequest.CaseId = Convert.ToInt32(HttpContext.Current.Request.Form["CaseNo"].ToString());
-            //saveCasePOCRequest.DocumentTitle = HttpContext.Current.Request.Form["DocumentType"].ToString();
-            //saveCasePOCRequest.FileName = Path.GetFileName(httpPostedFile.FileName);
-            //saveCasePOCRequest.FilePath = httpPostedFile.FileName;
-            //saveCasePOCRequest.ConvertedFileStream = httpPostedFile.InputStream;
-            //return saveCasePOCRequest;
+            //    if (multipart.Headers.ContentType.MediaType == "application/json")
+            //    {
+            //        String jsonObj = await multipart.ReadAsStringAsync();
+            //        customer = JsonConvert.DeserializeObject<Customer>(jsonObj);
 
+            //    }
+            //    else if (multipart.Headers.ContentType.MediaType == "application/octet-stream")
+            //    {
+
+            //        LegalDocument doc = new LegalDocument();
+            //        doc.fileStream = await multipart.ReadAsStreamAsync();
+            //        customer.LegalDocuments.Add(doc);
+
+            //        //string directoryPath = _rootImagePath + "/" + Convert.ToString(fabric.UserId);
+            //        //string thumbnailDirPath = _rootThumbnailImagePath + "/" + Convert.ToString(fabric.UserId);
+            //        //string fileName = fabric.ImageGuid + ".jpg";
+            //        //DirectoryInfo di = new DirectoryInfo(directoryPath);
+            //        //if (!di.Exists)
+            //        //{
+            //        //    di.Create();
+            //        //}
+            //        //using (var file = File.Create(directoryPath + "/" + fileName))
+            //        //    await multipart.CopyToAsync(file);
+
+            //        //DirectoryInfo diThumbnail = new DirectoryInfo(thumbnailDirPath);
+            //        //if (!diThumbnail.Exists)
+            //        //{
+            //        //    diThumbnail.Create();
+            //        //}
+
+            //        //using (ImageProcessor imgProc = new ImageProcessor())
+            //        //    imgProc.ResizeImage(directoryPath, fileName, thumbnailDirPath, fileName, 150, 150, true, false);
+
+            //        //di = null;
+            //        //diThumbnail = null;
+            //    }
+            //}
         }
 
-        //private MultipartFormDataStreamProvider GetMultipartProvider()
-        //{
-        //    var uploadFolder = "~/App_Data/Tmp/FileUploads"; // you could put this to web.config
-        //    var root = HttpContext.Current.Server.MapPath(uploadFolder);
-        //    Directory.CreateDirectory(root);
-        //    return new MultipartFormDataStreamProvider(root);
-        //}
-
+        
 
         private static CloudBlobContainer GetContainer(Customer customer)
         {
