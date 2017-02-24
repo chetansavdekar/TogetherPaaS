@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.IO;
 using Newtonsoft.Json;
 using System.Text;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace TogetherPaaS
 {
@@ -35,7 +36,7 @@ namespace TogetherPaaS
             return customerList;
         }
 
-        public static async Task<bool> CreateCustomers(Customer customer, HttpFileCollectionBase uploadedFiles)
+        public static async Task<bool> CreateCustomers(Customer customer, HttpFileCollectionBase uploadedFiles, AuthenticationResult autheticationResult)
         {
             var content = new MultipartContent();
             List<LegalDocument> legalDocs = new List<LegalDocument>();
@@ -78,7 +79,14 @@ namespace TogetherPaaS
             customer.LegalDocuments = legalDocs;           
             var objectContent = new ObjectContent<Customer>(customer, new System.Net.Http.Formatting.JsonMediaTypeFormatter());
             content.Add(objectContent);
-            
+
+            //HttpClient client = new HttpClient();
+            //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, todoListBaseAddress + "/api/todolist");
+            //request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
+            //HttpResponseMessage response = await client.SendAsync(request);
+
+
+
             HttpResponseMessage response = await _client.PostAsync("api/Upload/CreateCustomerWithDocumentUpload", content);
             if (response.IsSuccessStatusCode)
             {
