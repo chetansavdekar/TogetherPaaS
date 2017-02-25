@@ -51,12 +51,13 @@ namespace api.TogetherPaaS.Common
 
         private static bool InsertLegalDocs(int customerId, LegalDocument legalDocument, SqlConnection sqlConn)
         {
-            string INSERT = "INSERT INTO LegalDocument (CustomerId, FileName, ContentType, StoragePath) VALUES (@CustomerId, @FileName, @ContentType, @StoragePath)";
+            string INSERT = "INSERT INTO LegalDocument (CustomerId, FileName, DocumentType, ContentType, StoragePath) VALUES (@CustomerId, @FileName, @DocumentType, @ContentType, @StoragePath)";
 
             using (SqlCommand sqlCommand = new SqlCommand(INSERT, sqlConn))
             {
                 sqlCommand.Parameters.Add("@CustomerId", SqlDbType.VarChar).Value = customerId;
                 sqlCommand.Parameters.Add("@FileName", SqlDbType.VarChar).Value = legalDocument.FileName;
+                sqlCommand.Parameters.Add("@DocumentType", SqlDbType.VarChar).Value = legalDocument.DocumentType;
                 sqlCommand.Parameters.Add("@ContentType", SqlDbType.VarChar).Value = legalDocument.ContentType;
                 sqlCommand.Parameters.Add("@StoragePath", SqlDbType.VarChar).Value = legalDocument.StoragePath;
 
@@ -101,6 +102,7 @@ namespace api.TogetherPaaS.Common
                 {
                     legalDocument = new LegalDocument();
                     legalDocument.FileName = reader["FileName"].ToString();
+                    legalDocument.DocumentType = reader["DocumentType"].ToString();
                     legalDocument.ContentType = reader["ContentType"].ToString();
                     legalDocument.StoragePath = reader["StoragePath"].ToString();
                    

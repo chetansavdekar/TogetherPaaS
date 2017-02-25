@@ -6,7 +6,7 @@ namespace api.TogetherPaaS
     {
         public void Configuration(IAppBuilder app)
         {
-            ConfigureAuth(app);
+            //ConfigureAuth(app);
         }
     }
 }

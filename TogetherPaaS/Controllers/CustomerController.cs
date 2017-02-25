@@ -18,7 +18,7 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 namespace TogetherUpload.Controllers
 {
 
-    [Authorize]
+    //[Authorize]
     public class CustomerController : Controller
     {
 
@@ -43,18 +43,22 @@ namespace TogetherUpload.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(Customer customer)
         {
+            ViewBag.Status = string.Empty;
             AuthenticationResult autheticationresult = null;
 
             if (ModelState.IsValid)
             {
 
-                string userObjectID = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
-                AuthenticationContext authContext = new AuthenticationContext(Startup.Authority, new NaiveSessionCache(userObjectID));
-                ClientCredential credential = new ClientCredential(clientId, appKey);
-                autheticationresult = await authContext.AcquireTokenSilentAsync(todoListResourceId, credential, new UserIdentifier(userObjectID, UserIdentifierType.UniqueId));
+                //string userObjectID = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
+                //AuthenticationContext authContext = new AuthenticationContext(Startup.Authority, new NaiveSessionCache(userObjectID));
+                //ClientCredential credential = new ClientCredential(clientId, appKey);
+                //autheticationresult = await authContext.AcquireTokenSilentAsync(todoListResourceId, credential, new UserIdentifier(userObjectID, UserIdentifierType.UniqueId));
 
 
                 bool result = await APIServices.CreateCustomers(customer, Request.Files,autheticationresult).ConfigureAwait(false);
+
+                if (result)
+                    ViewBag.Status = "Data Save Successfully.";
 
                 return View(customer);
             }

@@ -19,7 +19,8 @@ namespace TogetherPaaS
         private static HttpClient _client = new HttpClient();     
         static APIServices()
         {
-            _client.BaseAddress = new Uri("http://localhost:20028/");
+            //_client.BaseAddress = new Uri("http://localhost:20028/");
+            _client.BaseAddress = new Uri("https://localhost:44396/");
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -48,12 +49,12 @@ namespace TogetherPaaS
                 {
                     var fileName = Path.GetFileName(file.FileName);
 
-           //***********************  OCR Calling and Processing ******************************//
+                    //***********************  OCR Calling and Processing ******************************//
 
                     string ocrJsonResult = await OCRServices.CallOCR(file.InputStream);
                     string docType = OCRServices.ProcessOCR(ocrJsonResult);
 
-            //***********************  OCR Calling and Processing ******************************//
+                    //***********************  OCR Calling and Processing ******************************//
 
                     LegalDocument legalDoc = new LegalDocument()
                     {
