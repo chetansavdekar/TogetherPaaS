@@ -18,44 +18,43 @@ using Microsoft.IdentityModel.Clients.ActiveDirectory;
 namespace TogetherUpload.Controllers
 {
 
-    //[Authorize]
+    [Authorize]
     public class CustomerController : Controller
     {
 
-        private string todoListResourceId = ConfigurationManager.AppSettings["todo:TodoListResourceId"];
-        private string todoListBaseAddress = ConfigurationManager.AppSettings["todo:TodoListBaseAddress"];
-        private const string TenantIdClaimType = "http://schemas.microsoft.com/identity/claims/tenantid";
-        private static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
-        private static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
+        //private string apiResourceId = ConfigurationManager.AppSettings["ida:ApiResourceid"];
+        //private string apiBaseAddress = ConfigurationManager.AppSettings["ida:ApiBaseAddress"];
+        //private const string TenantIdClaimType = "http://schemas.microsoft.com/identity/claims/tenantid";
+        //private static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
+        //private static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
 
         public ActionResult Index()
         {           
            return View(APIServices.GetCustomers());
             //return View(db.Supports.ToList());
         }
-        
+
+        //[ValidateAntiForgeryToken]
         public ActionResult Create()
         {
             return View();
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+       // [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(Customer customer)
         {
             ViewBag.Status = string.Empty;
-            AuthenticationResult autheticationresult = null;
+            AuthenticationResult authenticationresult = null;
 
             if (ModelState.IsValid)
             {
-
                 //string userObjectID = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
                 //AuthenticationContext authContext = new AuthenticationContext(Startup.Authority, new NaiveSessionCache(userObjectID));
                 //ClientCredential credential = new ClientCredential(clientId, appKey);
-                //autheticationresult = await authContext.AcquireTokenSilentAsync(todoListResourceId, credential, new UserIdentifier(userObjectID, UserIdentifierType.UniqueId));
+                //authenticationresult = await authContext.AcquireTokenSilentAsync(apiResourceId, credential, new UserIdentifier(userObjectID, UserIdentifierType.UniqueId));
 
-
-                bool result = await APIServices.CreateCustomers(customer, Request.Files,autheticationresult).ConfigureAwait(false);
+                bool result = await APIServices.CreateCustomers(customer, Request.Files).ConfigureAwait(false);
 
                 if (result)
                     ViewBag.Status = "Data Save Successfully.";
@@ -83,7 +82,7 @@ namespace TogetherUpload.Controllers
 
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
+       // [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(Customer customer)
         {
             if (ModelState.IsValid)

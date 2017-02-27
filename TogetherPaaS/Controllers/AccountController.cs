@@ -17,16 +17,18 @@ using System.Globalization;
 //using System.Net.Http;
 
 namespace TogetherPaaS.Controllers
-{
+{   
     public class AccountController : Controller 
     {
+        private string clientBaseAddress = ConfigurationManager.AppSettings["ida:ClientBaseAddress"];
         public void SignIn()
         {
             // Send an OpenID Connect sign-in request.
             if (!Request.IsAuthenticated)
             {
-                HttpContext.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = "/" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
+                HttpContext.GetOwinContext().Authentication.Challenge(new AuthenticationProperties { RedirectUri = "/Home/Index/" }, OpenIdConnectAuthenticationDefaults.AuthenticationType);
             }
+            
         }
         public void SignOut()
         {
@@ -35,7 +37,7 @@ namespace TogetherPaaS.Controllers
             AuthenticationContext authContext = new AuthenticationContext(Startup.Authority, new NaiveSessionCache(userObjectID));
             authContext.TokenCache.Clear();
 
-            HttpContext.GetOwinContext().Authentication.SignOut(
+            HttpContext.GetOwinContext().Authentication.SignOut(new AuthenticationProperties { RedirectUri = clientBaseAddress + "Account/Index" },
                 OpenIdConnectAuthenticationDefaults.AuthenticationType, CookieAuthenticationDefaults.AuthenticationType);
         }
 
@@ -51,6 +53,12 @@ namespace TogetherPaaS.Controllers
 
             // If AAD sends a single sign-out message to the app, end the user's session, but don't redirect to AAD for sign out.
             HttpContext.GetOwinContext().Authentication.SignOut(CookieAuthenticationDefaults.AuthenticationType);
+        }
+
+        public ActionResult Index()
+        {
+            //ashdgajsd
+            return View();
         }
     }
 }

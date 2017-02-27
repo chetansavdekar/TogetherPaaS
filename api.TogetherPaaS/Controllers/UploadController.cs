@@ -21,7 +21,8 @@ using System.Security.Claims;
 
 namespace api.TogetherPaaS.Controllers
 {
-    //[Authorize]
+    [Authorize]
+    //[RequireHttps]
     public class UploadController : ApiController
     {
         private static readonly string storageConnectionString = ConfigurationManager.AppSettings["StorageConnectionString"].ToString();
@@ -45,6 +46,7 @@ namespace api.TogetherPaaS.Controllers
                 throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
             }
 
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
 
             Customer localcustomer = SqlDBRepository.GetCustomer(customer.CaseId);
 
@@ -74,14 +76,15 @@ namespace api.TogetherPaaS.Controllers
         public async Task<HttpResponseMessage> CreateCustomerWithDocumentUpload()
         {
             ////
-            //// The Scope claim tells you what permissions the client application has in the service.
-            //// In this case we look for a scope value of user_impersonation, or full access to the service as the user.
-            ////
-            //if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
-            //{
-            //    throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
-            //}
+            // The Scope claim tells you what permissions the client application has in the service.
+            // In this case we look for a scope value of user_impersonation, or full access to the service as the user.
+            //
+            if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
+            {
+                throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
+            }
 
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
 
             Customer customer = await ProcessClientData();
             CloudBlobContainer container = GetContainer(customer);

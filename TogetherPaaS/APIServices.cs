@@ -10,17 +10,25 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Text;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Security.Claims;
+using TogetherPaaS.Utils;
+using System.Configuration;
 
 namespace TogetherPaaS
 {
     public class APIServices
     {
 
-        private static HttpClient _client = new HttpClient();     
+        private static HttpClient _client = new HttpClient();
+        private static string apiResourceId = ConfigurationManager.AppSettings["ida:ApiResourceid"];
+        private static string apiBaseAddress = ConfigurationManager.AppSettings["ida:ApiBaseAddress"];
+        private const string TenantIdClaimType = "http://schemas.microsoft.com/identity/claims/tenantid";
+        private static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
+        private static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
         static APIServices()
         {
-            //_client.BaseAddress = new Uri("http://localhost:20028/");
-            _client.BaseAddress = new Uri("https://localhost:44396/");
+            ////_client.BaseAddress = new Uri("http://localhost:20028/");
+            _client.BaseAddress = new Uri(apiBaseAddress);
             _client.DefaultRequestHeaders.Accept.Clear();
             _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
@@ -37,7 +45,7 @@ namespace TogetherPaaS
             return customerList;
         }
 
-        public static async Task<bool> CreateCustomers(Customer customer, HttpFileCollectionBase uploadedFiles, AuthenticationResult autheticationResult)
+        public static async Task<bool> CreateCustomers(Customer customer, HttpFileCollectionBase uploadedFiles)
         {
             var content = new MultipartContent();
             List<LegalDocument> legalDocs = new List<LegalDocument>();
@@ -51,8 +59,8 @@ namespace TogetherPaaS
 
                     //***********************  OCR Calling and Processing ******************************//
 
-                    string ocrJsonResult = await OCRServices.CallOCR(file.InputStream);
-                    string docType = OCRServices.ProcessOCR(ocrJsonResult);
+                    //string ocrJsonResult = await OCRServices.CallOCR(file.InputStream);
+                    //string docType = OCRServices.ProcessOCR(ocrJsonResult);
 
                     //***********************  OCR Calling and Processing ******************************//
 
@@ -62,7 +70,7 @@ namespace TogetherPaaS
                         Extension = Path.GetExtension(fileName),
                         Id = Guid.NewGuid(),
                         DocumentData = GetFileBytes(file.InputStream),
-                        DocumentType = docType, // changed here for document type
+                        DocumentType = OCRCallApi(i),//docType, // changed here for document type
                         ContentType = file.ContentType
                 };
                     legalDocs.Add(legalDoc);                 
@@ -81,20 +89,23 @@ namespace TogetherPaaS
             var objectContent = new ObjectContent<Customer>(customer, new System.Net.Http.Formatting.JsonMediaTypeFormatter());
             content.Add(objectContent);
 
-            //HttpClient client = new HttpClient();
-            //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, todoListBaseAddress + "/api/todolist");
-            //request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", result.AccessToken);
-            //HttpResponseMessage response = await client.SendAsync(request);
+            AuthenticationResult authenticationResult = null;
+            string userObjectID = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
+            AuthenticationContext authContext = new AuthenticationContext(Startup.Authority, new NaiveSessionCache(userObjectID));
+            ClientCredential credential = new ClientCredential(clientId, appKey);
+            authenticationResult = await authContext.AcquireTokenSilentAsync(apiResourceId, credential, new UserIdentifier(userObjectID, UserIdentifierType.UniqueId));
+            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "api/Upload/CreateCustomerWithDocumentUpload");
+            request.Content = content;
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authenticationResult.AccessToken);
+            HttpResponseMessage response = await _client.SendAsync(request);
 
-
-
-            HttpResponseMessage response = await _client.PostAsync("api/Upload/CreateCustomerWithDocumentUpload", content);
+            //HttpResponseMessage response = await _client.PostAsync("api/Upload/CreateCustomerWithDocumentUpload", content);
             if (response.IsSuccessStatusCode)
             {
                 return true;
             }
 
-            return false;            
+            return false;
         }
 
             private static string OCRCallApi(int i)
