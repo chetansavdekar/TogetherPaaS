@@ -86,11 +86,15 @@ namespace api.TogetherPaaS.Controllers
             Customer customer = await ProcessClientData();
             CloudBlobContainer container = GetContainer(customer);
 
-            container.CreateIfNotExists();
+            //container.CreateIfNotExists();
+
+            // Retrieve a case directory created for broker.
+            CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
+                        
 
             foreach (var item in customer.LegalDocuments)
             {
-                item.StoragePath = UploadBlob(container, customer.CaseId, item);
+                item.StoragePath = UploadBlob(caseDirectory, customer.CaseId, item);
             }
 
             bool status = SqlDBRepository.InsertCustomer(customer);
@@ -103,9 +107,10 @@ namespace api.TogetherPaaS.Controllers
 
        }
 
-        private static string UploadBlob(CloudBlobContainer container, string CaseId, LegalDocument legalDocument)
+        private static string UploadBlob(CloudBlobDirectory caseDirectory, string CaseId, LegalDocument legalDocument)
         {
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference(CaseId.ToString() + "_" + legalDocument.DocumentType);
+
+            CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(CaseId.ToString() + "_" + legalDocument.DocumentType);
             Stream stream = new MemoryStream(legalDocument.DocumentData);
             blockBlob.UploadFromStream(stream);
 
@@ -193,8 +198,24 @@ namespace api.TogetherPaaS.Controllers
 
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
 
-            CloudBlobContainer container = blobClient.GetContainerReference("case" + customer.CaseId.ToString().ToLower());
-            return container;
+            // Retrieve a directory created for broker.
+            CloudBlobContainer brokercontainer = blobClient.GetContainerReference("broker");
+
+            // Create the container if it doesn't already exist.
+            brokercontainer.CreateIfNotExists();
+
+            return brokercontainer;
+
+            //// Create the container if it doesn't already exist.
+            //brokercontainer.CreateIfNotExists();
+
+            //// Retrive the blob directory
+            //CloudBlobDirectory caseDirectory = brokercontainer.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
+
+
+
+            //CloudBlobContainer container = blobClient.GetContainerReference("case" + customer.CaseId.ToString().ToLower());
+            //return container;
         }
 
         //private static CloudBlobContainer GetContainer()
