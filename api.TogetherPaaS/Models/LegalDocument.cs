@@ -9,6 +9,8 @@ namespace api.TogetherPaaS.Models
 {
     public class LegalDocument
     {
+        public Guid Id { get; set; }
+        public int CustomerId { get; set; }
         public string FileName { get; set; }
 
         public string ContentType { get; set; }

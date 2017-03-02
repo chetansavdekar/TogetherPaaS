@@ -184,6 +184,7 @@
     </Compile>
     <Compile Include="Models\ContentType.cs" />
     <Compile Include="Models\Customer.cs" />
+    <Compile Include="Models\CustomerFile.cs" />
     <Compile Include="Models\LegalDocument.cs" />
     <Compile Include="Models\OCR.cs" />
     <Compile Include="OCRServices.cs" />

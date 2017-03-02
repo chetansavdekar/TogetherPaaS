@@ -13,7 +13,7 @@ namespace api.TogetherPaaS.Models
 
         public string CaseId { get; set; }
 
-        public string CustomerId { get; set; }
+        public int CustomerId { get; set; }
 
         public string FirstName { get; set; }
 

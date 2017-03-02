@@ -57,8 +57,15 @@ namespace TogetherPaaS.Controllers
 
         public ActionResult Index()
         {
-            //ashdgajsd
-            return View();
+            if (Request.IsAuthenticated)
+            {
+                return RedirectToAction("Index","Home");
+            }
+            else
+            {
+                return View();
+            }      
+            
         }
     }
 }

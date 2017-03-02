@@ -14,9 +14,11 @@
         <th>
             @Html.DisplayNameFor(model => model.FirstName)
         </th>
+        <th></th>
         <th>
             @Html.DisplayNameFor(model => model.LastName)
         </th>
+        <th></th>
          <th>Total Files</th>
         <th></th>
     </tr>
@@ -26,9 +28,11 @@
         <td>
             @Html.DisplayFor(modelItem => item.FirstName)
         </td>
+        <td></td>
         <td>
             @Html.DisplayFor(modelItem => item.LastName)
         </td>
+        <td></td>
         <td>@if (item.LegalDocuments.Count() == 0) { 
             <span>No File</span>
             }
@@ -36,9 +40,10 @@
             <span>@item.LegalDocuments.Count() File(s)</span>   
             }
         </td>
+        <td></td>
         <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.CaseId }) |         
-            <a href="javascript:void(0);" data-id="@item.CaseId" class="deleteItem">Delete</a>
+            @Html.ActionLink("Edit", "Edit", new { id=item.CustomerId }) |         
+            <a id="delete" href="javascript:void(0);" data-id='{"customerId":@item.CustomerId,"caseId":@item.CaseId}' class="deleteItem">Delete</a>          
         </td>
     </tr>
 }
@@ -53,9 +58,9 @@
             var $ctrl = $(this);
             if (confirm('Do you really want to delete this item?')) {
                 $.ajax({
-                    url: '@Url.Action("DeleteCase")',
-                    type: 'POST',
-                    data: { caseId: $(this).data('id') }
+                    url: '@Url.Action("DeleteCustomer")',
+                    type: 'POST',                 
+                    data: { customerId: $(this).data('id').customerId, caseId: $(this).data('id').caseId }
                 }).done(function (data) {                    
                     if (data.Result == "OK") {
                         $ctrl.closest('tr').remove();                        

@@ -13,7 +13,7 @@ namespace TogetherPaaS
 {
     public class OCRServices
     {
-        public static async Task<string> CallOCR(Stream imageStream)
+        public static async Task<string> CallOCR(byte[] byteData)
         {
             string jsonStr = null;
             HttpResponseMessage response = null;
@@ -28,10 +28,7 @@ namespace TogetherPaaS
             queryString["language"] = "unk";
             queryString["detectOrientation "] = "true";
             var uri = "https://westus.api.cognitive.microsoft.com/vision/v1.0/ocr?" + queryString;
-
-            // Request body
-            byte[] byteData = ConvertStreamToByteArray(imageStream);
-
+            
             using (var content = new ByteArrayContent(byteData))
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
@@ -47,7 +44,7 @@ namespace TogetherPaaS
             return jsonStr;
         }
 
-        private static byte[] ConvertStreamToByteArray(Stream inputStream)
+        public static byte[] ConvertStreamToByteArray(Stream inputStream)
         {
             using (MemoryStream memoryStream = new MemoryStream())
             {

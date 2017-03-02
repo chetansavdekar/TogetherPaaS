@@ -21,8 +21,7 @@ using System.Security.Claims;
 
 namespace api.TogetherPaaS.Controllers
 {
-    [Authorize]
-    //[RequireHttps]
+    [Authorize]    
     public class UploadController : ApiController
     {
         private static readonly string storageConnectionString = ConfigurationManager.AppSettings["StorageConnectionString"].ToString();
@@ -31,10 +30,22 @@ namespace api.TogetherPaaS.Controllers
         {
             
         }
+        [HttpPost]
+        public IHttpActionResult GetCustomers()
+        {         
+            if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
+            {
+                throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
+            }
 
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
+            IEnumerable<Customer> customers = SqlDBRepository.GetCustomers();
+
+            return Ok(customers);
+        }
 
         [HttpPost]
-        public HttpResponseMessage RetriveCloudDocument(Customer customer)
+        public async Task<HttpResponseMessage> GetCustomerWithCustomerId()
         {
 
             //
@@ -48,15 +59,17 @@ namespace api.TogetherPaaS.Controllers
 
             Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
 
-            Customer localcustomer = SqlDBRepository.GetCustomer(customer.CaseId);
+            Customer customer = await ProcessClientData();
 
-            CloudBlobContainer container = GetContainer(localcustomer);
-            //AzureDocumentResponse docResponse = new AzureDocumentResponse();
+            Customer localcustomer = SqlDBRepository.GetCustomer(customer.CustomerId);
 
-            for (int i = 0; i < localcustomer.LegalDocuments.Count; i++)
-            {
-                localcustomer.LegalDocuments[i].DocumentData = GetBlob(container, customer.CaseId);
-            }
+            //CloudBlobContainer container = GetContainer(localcustomer);
+            ////AzureDocumentResponse docResponse = new AzureDocumentResponse();
+
+            //for (int i = 0; i < localcustomer.LegalDocuments.Count; i++)
+            //{
+            //    localcustomer.LegalDocuments[i].DocumentData = GetBlob(container, customer.CaseId);
+            //}
 
             return Request.CreateResponse(HttpStatusCode.OK, localcustomer);
 
@@ -87,7 +100,7 @@ namespace api.TogetherPaaS.Controllers
             Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
 
             Customer customer = await ProcessClientData();
-            CloudBlobContainer container = GetContainer(customer);
+            CloudBlobContainer container = GetContainer();
 
             //container.CreateIfNotExists();
 
@@ -97,7 +110,7 @@ namespace api.TogetherPaaS.Controllers
 
             foreach (var item in customer.LegalDocuments)
             {
-                item.StoragePath = UploadBlob(caseDirectory, customer.CaseId, item);
+                item.StoragePath = UploadBlob(caseDirectory, item);
             }
 
             bool status = SqlDBRepository.InsertCustomer(customer);
@@ -110,10 +123,102 @@ namespace api.TogetherPaaS.Controllers
 
        }
 
-        private static string UploadBlob(CloudBlobDirectory caseDirectory, string CaseId, LegalDocument legalDocument)
+        [HttpPost]
+        public async Task<HttpResponseMessage> EditCustomerWithDocumentUpload()
+        {           
+            if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
+            {
+                throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
+            }
+
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
+
+            Customer customer = await ProcessClientData();
+            CloudBlobContainer container = GetContainer();
+
+            // Retrieve a case directory created for broker.
+            CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
+
+
+            foreach (var item in customer.LegalDocuments)
+            {
+                item.StoragePath = UploadBlob(caseDirectory, item);
+            }
+
+            bool status = SqlDBRepository.UpdateCustomer(customer);
+
+            return new HttpResponseMessage()
+            {
+                StatusCode = HttpStatusCode.OK
+            };
+
+        }
+
+        [HttpPost]
+        public async Task<HttpResponseMessage> DeleteCustomer()
+        {
+            if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
+            {
+                throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
+            }
+
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
+
+            Customer customer = await ProcessClientData();
+            CloudBlobContainer container = GetContainer();
+
+            // Delete customer case directory from container for broker.            
+
+            foreach (IListBlobItem blob in container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower()).ListBlobs(true))
+            {
+                if (blob.GetType() == typeof(CloudBlob) || blob.GetType().BaseType == typeof(CloudBlob))
+                {
+                    ((CloudBlob)blob).DeleteIfExists();
+                }
+            }       
+
+            bool status = SqlDBRepository.DeleteCustomer(customer);
+
+            return new HttpResponseMessage()
+            {
+                StatusCode = HttpStatusCode.OK
+            };
+
+        }
+
+        [HttpPost]
+        public async Task<HttpResponseMessage> DeleteFile()
+        {
+            if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
+            {
+                throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
+            }
+
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
+
+            CustomerFile custFile = await ProcessCustomerFileData();
+            CloudBlobContainer container = GetContainer();
+
+            custFile = SqlDBRepository.GetLegalDocumentData(custFile.Id);
+            // Delete customer case directory from container for broker.   
+
+            CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + custFile.CaseId.ToString().ToLower());
+            CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(custFile.Id.ToString() + "_" + custFile.DocumentType);
+            blockBlob.DeleteIfExists();         
+
+            bool status = SqlDBRepository.DeleteLegalDocument(custFile);
+
+            return new HttpResponseMessage()
+            {
+                StatusCode = HttpStatusCode.OK
+            };
+
+        }
+
+        private static string UploadBlob(CloudBlobDirectory caseDirectory, LegalDocument legalDocument)
         {
 
-            CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(CaseId.ToString() + "_" + legalDocument.DocumentType);
+            CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(legalDocument.Id.ToString() + "_" + legalDocument.DocumentType);
             Stream stream = new MemoryStream(legalDocument.DocumentData);
             blockBlob.UploadFromStream(stream);
 
@@ -134,6 +239,30 @@ namespace api.TogetherPaaS.Controllers
             //}
         }
 
+        //private static string DeleteCaseBlob(CloudBlobDirectory caseDirectory, string CaseId, LegalDocument legalDocument)
+        //{
+
+        //    CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(CaseId.ToString() + "_" + legalDocument.DocumentType);
+        //    Stream stream = new MemoryStream(legalDocument.DocumentData);
+        //    blockBlob.UploadFromStream(stream);
+
+        //    string azureuri = blockBlob.Uri.AbsoluteUri.ToString();
+
+        //    return azureuri;
+
+        //    //blockBlob.UploadFromByteArray(legalDocument.DocumentData, 0, 1);
+
+        //    //Byte Array
+        //    //using (var stream = new MemoryStream(saveCasePOCRequest.FileStream, writable: false))
+
+        //    //MemoryStream fstream = new System.IO.MemoryStream();
+
+        //    //using (var stream = System.IO.File.OpenRead(saveCasePOCRequest.FilePath))
+        //    //{
+        //    //    blockBlob.UploadFromStream(stream);
+        //    //}
+        //}
+
         private async Task<Customer> ProcessClientData()
         {
             Customer customer = new Customer();
@@ -151,51 +280,32 @@ namespace api.TogetherPaaS.Controllers
             customer = JsonConvert.DeserializeObject<Customer>(jsonObj);
 
             return customer;
-
-            //foreach (var multipart in outerMultipart.Contents)
-            //{
-            //    if (multipart.Headers.ContentType.MediaType == "application/json")
-            //    {
-            //        String jsonObj = await multipart.ReadAsStringAsync();
-            //        customer = JsonConvert.DeserializeObject<Customer>(jsonObj);
-
-            //    }
-            //    else if (multipart.Headers.ContentType.MediaType == "application/octet-stream")
-            //    {
-
-            //        LegalDocument doc = new LegalDocument();
-            //        doc.fileStream = await multipart.ReadAsStreamAsync();
-            //        customer.LegalDocuments.Add(doc);
-
-            //        //string directoryPath = _rootImagePath + "/" + Convert.ToString(fabric.UserId);
-            //        //string thumbnailDirPath = _rootThumbnailImagePath + "/" + Convert.ToString(fabric.UserId);
-            //        //string fileName = fabric.ImageGuid + ".jpg";
-            //        //DirectoryInfo di = new DirectoryInfo(directoryPath);
-            //        //if (!di.Exists)
-            //        //{
-            //        //    di.Create();
-            //        //}
-            //        //using (var file = File.Create(directoryPath + "/" + fileName))
-            //        //    await multipart.CopyToAsync(file);
-
-            //        //DirectoryInfo diThumbnail = new DirectoryInfo(thumbnailDirPath);
-            //        //if (!diThumbnail.Exists)
-            //        //{
-            //        //    diThumbnail.Create();
-            //        //}
-
-            //        //using (ImageProcessor imgProc = new ImageProcessor())
-            //        //    imgProc.ResizeImage(directoryPath, fileName, thumbnailDirPath, fileName, 150, 150, true, false);
-
-            //        //di = null;
-            //        //diThumbnail = null;
-            //    }
-            //}
+          
         }
 
-        
+        private async Task<CustomerFile> ProcessCustomerFileData()
+        {
+            CustomerFile custFile = new CustomerFile();
 
-        private static CloudBlobContainer GetContainer(Customer customer)
+            if (!Request.Content.IsMimeMultipartContent())
+            {
+                throw new HttpResponseException(HttpStatusCode.UnsupportedMediaType);
+            }
+
+            var outerMultipart = await Request.Content.ReadAsMultipartAsync();
+
+            var multipart = outerMultipart.Contents[0];
+
+            String jsonObj = await multipart.ReadAsStringAsync();
+            custFile = JsonConvert.DeserializeObject<CustomerFile>(jsonObj);
+
+            return custFile;
+
+        }
+
+
+
+        private static CloudBlobContainer GetContainer()
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
 
@@ -240,6 +350,8 @@ namespace api.TogetherPaaS.Controllers
         //    //    new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
 
         //}
+
+
         
     }
 }

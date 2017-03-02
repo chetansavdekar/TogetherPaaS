@@ -21,17 +21,10 @@ namespace TogetherUpload.Controllers
     [Authorize]
     public class CustomerController : Controller
     {
-
-        //private string apiResourceId = ConfigurationManager.AppSettings["ida:ApiResourceid"];
-        //private string apiBaseAddress = ConfigurationManager.AppSettings["ida:ApiBaseAddress"];
-        //private const string TenantIdClaimType = "http://schemas.microsoft.com/identity/claims/tenantid";
-        //private static string clientId = ConfigurationManager.AppSettings["ida:ClientId"];
-        //private static string appKey = ConfigurationManager.AppSettings["ida:AppKey"];
-
-        public ActionResult Index()
-        {           
-           return View(APIServices.GetCustomers());
-            //return View(db.Supports.ToList());
+        public async Task<ActionResult> Index()
+        {
+           //IEnumerable<Customer> customers = await APIServices.GetCustomers();
+           return View(await APIServices.GetCustomers());           
         }
 
         //[ValidateAntiForgeryToken]
@@ -44,34 +37,28 @@ namespace TogetherUpload.Controllers
        // [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(Customer customer)
         {
-            ViewBag.Status = string.Empty;
-            AuthenticationResult authenticationresult = null;
+            ViewBag.Status = string.Empty;         
 
             if (ModelState.IsValid)
             {
-                //string userObjectID = ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier").Value;
-                //AuthenticationContext authContext = new AuthenticationContext(Startup.Authority, new NaiveSessionCache(userObjectID));
-                //ClientCredential credential = new ClientCredential(clientId, appKey);
-                //authenticationresult = await authContext.AcquireTokenSilentAsync(apiResourceId, credential, new UserIdentifier(userObjectID, UserIdentifierType.UniqueId));
-
                 bool result = await APIServices.CreateCustomers(customer, Request.Files).ConfigureAwait(false);
 
-                if (result)
-                    ViewBag.Status = "Data Save Successfully.";
+                //if (result)
+                //    ViewBag.Status = "Data Saved Successfully.";
 
-                return View(customer);
+                //return View(customer);
             }
             return RedirectToAction("Index");
 
         }
 
-        public async Task<ActionResult> Edit(int? id)
+        public async Task<ActionResult> Edit(string id)
         {
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-            Customer customer = await APIServices.GetCustomerWithCaseId(Convert.ToInt32(id)).ConfigureAwait(false);
+            Customer customer = await APIServices.GetCustomerWithCustomerId(id).ConfigureAwait(false);
          
             if (customer == null)
             {
@@ -98,16 +85,16 @@ namespace TogetherUpload.Controllers
 
 
         [HttpPost]
-        public async Task<JsonResult> DeleteFile(string id)
+        public async Task<JsonResult> DeleteFile(string fileId)
         {
-            if (String.IsNullOrEmpty(id))
+            if (String.IsNullOrEmpty(fileId))
             {
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
             try
             {
-                bool result = await APIServices.DeleteFile(id).ConfigureAwait(false);             
+                bool result = await APIServices.DeleteFile(fileId).ConfigureAwait(false);             
                 return Json(new { Result = "OK" });
             }
             catch (Exception ex)
@@ -118,22 +105,27 @@ namespace TogetherUpload.Controllers
 
 
         [HttpPost]
-        public async Task<JsonResult> DeleteCase(int caseId)
+        public async Task<JsonResult> DeleteCustomer(string customerId, string caseId)
         {
-            if (caseId == 0)
+            if (string.IsNullOrEmpty(customerId))
             {
                 Response.StatusCode = (int)HttpStatusCode.BadRequest;
                 return Json(new { Result = "Error" });
             }
             try
             {
-                bool result = await APIServices.DeleteCase(caseId).ConfigureAwait(false);
+                bool result = await APIServices.DeleteCustomer(customerId, caseId).ConfigureAwait(false);
                 return Json(new { Result = "OK" });
             }
             catch (Exception ex)
             {
                 return Json(new { Result = "ERROR", Message = ex.Message });
             }
+        }
+
+        public FileResult Download(String p, String d)
+        {
+            return File(Path.Combine(Server.MapPath("~/App_Data/Upload/"), p), System.Net.Mime.MediaTypeNames.Application.Octet, d);
         }
 
 
