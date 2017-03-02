@@ -241,7 +241,7 @@ namespace TogetherPaaS
                     //***********************  OCR Calling and Processing ******************************//
                     byte[] byteData = OCRServices.ConvertStreamToByteArray(file.InputStream);
                     string ocrJsonResult = await OCRServices.CallOCR(byteData);
-                    string docType = OCRServices.ProcessOCR(ocrJsonResult);
+                    CustomerFile custFile = OCRServices.ProcessOCR(ocrJsonResult);
 
                     //***********************  OCR Calling and Processing ******************************//
 
@@ -251,7 +251,8 @@ namespace TogetherPaaS
                         Extension = Path.GetExtension(fileName),
                         Id = Guid.NewGuid(),
                         DocumentData = byteData, //GetFileBytes(file.InputStream),
-                        DocumentType = docType, //OCRCallApi(i) // changed here for document type
+                        DocumentType = custFile.DocumentType, //OCRCallApi(i) // changed here for document type
+                        DocumentNumber = custFile.DocumentNumber,
                         ContentType = file.ContentType
                     };
                     legalDocs.Add(legalDoc);

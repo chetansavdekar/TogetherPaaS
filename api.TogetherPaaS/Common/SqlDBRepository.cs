@@ -51,7 +51,7 @@ namespace api.TogetherPaaS.Common
 
         private static bool InsertLegalDocs(int customerId, LegalDocument legalDocument, SqlConnection sqlConn)
         {
-            string INSERT = "INSERT INTO LegalDocument (LegalDocumentID, CustomerId, FileName, DocumentType, ContentType, StoragePath) VALUES (@LegalDocumentID, @CustomerId, @FileName, @DocumentType, @ContentType, @StoragePath)";
+            string INSERT = "INSERT INTO LegalDocument (LegalDocumentID, CustomerId, FileName, DocumentType, ContentType, StoragePath, DocumentNumber) VALUES (@LegalDocumentID, @CustomerId, @FileName, @DocumentType, @ContentType, @StoragePath, @DocumentNumber)";
 
             using (SqlCommand sqlCommand = new SqlCommand(INSERT, sqlConn))
             {
@@ -61,6 +61,7 @@ namespace api.TogetherPaaS.Common
                 sqlCommand.Parameters.Add("@DocumentType", SqlDbType.VarChar).Value = legalDocument.DocumentType;
                 sqlCommand.Parameters.Add("@ContentType", SqlDbType.VarChar).Value = legalDocument.ContentType;
                 sqlCommand.Parameters.Add("@StoragePath", SqlDbType.VarChar).Value = legalDocument.StoragePath;
+                sqlCommand.Parameters.Add("@DocumentNumber", SqlDbType.VarChar).Value = legalDocument.DocumentNumber;
 
                 sqlCommand.ExecuteNonQuery();
             }
@@ -108,6 +109,7 @@ namespace api.TogetherPaaS.Common
                     legalDocument.DocumentType = reader["DocumentType"].ToString();
                     legalDocument.ContentType = reader["ContentType"].ToString();
                     legalDocument.StoragePath = reader["StoragePath"].ToString();
+                    legalDocument.DocumentNumber = reader["DocumentNumber"].ToString();
 
                     customer.LegalDocuments.Add(legalDocument);
                 }

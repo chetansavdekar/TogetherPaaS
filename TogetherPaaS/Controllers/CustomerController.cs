@@ -23,18 +23,15 @@ namespace TogetherUpload.Controllers
     {
         public async Task<ActionResult> Index()
         {
-           //IEnumerable<Customer> customers = await APIServices.GetCustomers();
            return View(await APIServices.GetCustomers());           
         }
 
-        //[ValidateAntiForgeryToken]
         public ActionResult Create()
         {
             return View();
         }
 
         [HttpPost]
-       // [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(Customer customer)
         {
             ViewBag.Status = string.Empty;         
@@ -69,12 +66,10 @@ namespace TogetherUpload.Controllers
 
 
         [HttpPost]
-       // [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(Customer customer)
         {
             if (ModelState.IsValid)
             {
-                //Server.MapPath("~/App_Data/Upload/"
                 bool result = await APIServices.EditCustomer(customer, Request.Files).ConfigureAwait(false);
 
                 return RedirectToAction("Index");

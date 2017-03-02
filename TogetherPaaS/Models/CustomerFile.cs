@@ -16,5 +16,7 @@ namespace TogetherUpload.Models
         public byte[] DocumentData { get; set; }
 
         public string DocumentType { get; set; }
+
+        public string DocumentNumber { get; set; }
     }
 }

@@ -28,6 +28,8 @@ namespace api.TogetherPaaS.Models
 
         public byte[] DocumentData { get; set; }
 
-        
+        public string DocumentNumber { get; set; }
+
+
     }
 }

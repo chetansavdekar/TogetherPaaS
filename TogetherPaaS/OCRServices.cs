@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web;
 using TogetherPaaS.Models;
+using TogetherUpload.Models;
 
 namespace TogetherPaaS
 {
@@ -54,29 +55,55 @@ namespace TogetherPaaS
         }
 
 
-        public static string ProcessOCR(string jsonStr)
+        public static CustomerFile ProcessOCR(string jsonStr)
         {
             OCR ocrObj = JsonConvert.DeserializeObject<OCR>(jsonStr);
+            CustomerFile custFile = new CustomerFile();
+            string documentNumber = string.Empty;
+            //string dlNumber = string.Empty;
 
             foreach (var region in ocrObj.regions)
             {
                 foreach (var line in region.lines)
                 {
+                    if (!string.IsNullOrEmpty(documentNumber))
+                    {
+                        if (documentNumber.ToLower().Contains("dl"))
+                        {
+                            custFile.DocumentType = "Driving License";
+                        }
+
+                        custFile.DocumentNumber = documentNumber;
+                        return custFile;
+                    }
+
                     foreach (var word in line.words)
                     {
-                        if (word.text.ToString().ToLower().Contains(ContentType.Passport.ToString().ToLower()))
+                        if (word.text.ToString().ToLower().Contains("dl") || word.text.ToString().ToLower().Contains("no"))
                         {
-                            return "Passport";
+                            documentNumber += word.text.ToString() + " ";
                         }
-                        else if (word.text.ToString().ToLower().Contains(ContentType.Driving.ToString().ToLower()))
+                        else if (!string.IsNullOrEmpty(documentNumber) && documentNumber.ToString().ToLower().Contains("dl no"))
                         {
-                            return "Driving License";
+                            documentNumber += word.text.ToString() + " ";
+
                         }
+
+                        //if (word.text.ToString().ToLower().Contains(ContentType.Passport.ToString().ToLower()))
+                        //{
+                        //    custFile.DocumentType = "Passport";
+                        //    return custFile;
+                        //}
+                        //else if (word.text.ToString().ToLower().Contains(ContentType.Driving.ToString().ToLower()))
+                        //{
+                        //    custFile.DocumentType = "Driving License";
+                        //    return custFile;
+                        //}
                     }
                 }
             }
 
-            return "";
+            return custFile;
         }
     }
 }
