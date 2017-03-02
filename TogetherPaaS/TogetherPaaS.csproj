@@ -184,8 +184,11 @@
     </Compile>
     <Compile Include="Models\ContentType.cs" />
     <Compile Include="Models\Customer.cs" />
+    <Compile Include="Models\DLDoc.cs" />
+    <Compile Include="Models\Document.cs" />
     <Compile Include="Models\LegalDocument.cs" />
     <Compile Include="Models\OCR.cs" />
+    <Compile Include="Models\PassportDoc.cs" />
     <Compile Include="OCRServices.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
