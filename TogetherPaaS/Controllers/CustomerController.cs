@@ -118,9 +118,11 @@ namespace TogetherUpload.Controllers
             }
         }
 
-        public FileResult Download(String p, String d)
+        public async Task<FileResult> Download(string fileId, string fileName)
         {
-            return File(Path.Combine(Server.MapPath("~/App_Data/Upload/"), p), System.Net.Mime.MediaTypeNames.Application.Octet, d);
+            //return File(Path.Combine(Server.MapPath("~/App_Data/Upload/"), p), System.Net.Mime.MediaTypeNames.Application.Octet, d);
+            CustomerFile custFile = await APIServices.DownloadFile(fileId).ConfigureAwait(false);
+            return File(custFile.DocumentData, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
         }
 
 

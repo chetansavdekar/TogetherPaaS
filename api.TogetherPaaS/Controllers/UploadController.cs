@@ -215,6 +215,35 @@ namespace api.TogetherPaaS.Controllers
 
         }
 
+        [HttpPost]
+        public async Task<IHttpActionResult> DownloadFile()
+        {
+            if (ClaimsPrincipal.Current.FindFirst("http://schemas.microsoft.com/identity/claims/scope").Value != "user_impersonation")
+            {
+                throw new HttpResponseException(new HttpResponseMessage { StatusCode = HttpStatusCode.Unauthorized, ReasonPhrase = "The Scope claim does not contain 'user_impersonation' or scope claim not found" });
+            }
+
+            Claim subject = ClaimsPrincipal.Current.FindFirst(ClaimTypes.NameIdentifier);
+
+            CustomerFile custFile = await ProcessCustomerFileData();
+            CloudBlobContainer container = GetContainer();
+
+            custFile = SqlDBRepository.GetLegalDocumentData(custFile.Id);        
+
+            CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + custFile.CaseId.ToString().ToLower());
+            CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(custFile.Id.ToString() + "_" + custFile.DocumentType);
+            blockBlob.FetchAttributes();
+            byte[] byteData = new byte[blockBlob.Properties.Length];
+            blockBlob.DownloadToByteArray(byteData, 0);
+
+            custFile.DocumentData = byteData;
+
+            return Ok(custFile);
+
+        }
+
+        
+
         private static string UploadBlob(CloudBlobDirectory caseDirectory, LegalDocument legalDocument)
         {
 

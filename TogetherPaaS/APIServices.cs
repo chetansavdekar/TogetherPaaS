@@ -104,6 +104,23 @@ namespace TogetherPaaS
             //return false;
         }
 
+        internal static async Task<CustomerFile> DownloadFile(string fileId)
+        {
+            CustomerFile custFile = new CustomerFile();
+            custFile.Id = new Guid(fileId);
+            var json = JsonConvert.SerializeObject(custFile);
+            var strContent = new StringContent(json, Encoding.UTF8, "application/json");
+            var content = new MultipartContent();
+            content.Add(strContent);
+
+            HttpResponseMessage response = await SendApiRequest("api/Upload/DownloadFile", content);
+            if (response.IsSuccessStatusCode)
+            {
+                custFile = await response.Content.ReadAsAsync<CustomerFile>();
+            }
+            return custFile;
+        }
+
         private static async Task<HttpResponseMessage> SendApiRequest(string url, MultipartContent content)
         {
             try
