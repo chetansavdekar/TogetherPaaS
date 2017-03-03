@@ -103,6 +103,9 @@ namespace TogetherPaaS
                 }
             }
 
+            custFile.DocumentType = "NA";
+            custFile.DocumentNumber = "NA";
+
             return custFile;
         }
     }

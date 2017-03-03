@@ -55,7 +55,7 @@ namespace api.TogetherPaaS.Common
 
             using (SqlCommand sqlCommand = new SqlCommand(INSERT, sqlConn))
             {
-                sqlCommand.Parameters.Add("@LegalDocumentID", SqlDbType.UniqueIdentifier).Value = Guid.NewGuid();
+                sqlCommand.Parameters.Add("@LegalDocumentID", SqlDbType.UniqueIdentifier).Value = legalDocument.Id;
                 sqlCommand.Parameters.Add("@CustomerId", SqlDbType.Int).Value = customerId;
                 sqlCommand.Parameters.Add("@FileName", SqlDbType.VarChar).Value = legalDocument.FileName;
                 sqlCommand.Parameters.Add("@DocumentType", SqlDbType.VarChar).Value = legalDocument.DocumentType;
