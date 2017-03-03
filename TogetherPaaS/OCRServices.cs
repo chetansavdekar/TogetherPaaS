@@ -29,7 +29,7 @@ namespace TogetherPaaS
             queryString["language"] = "unk";
             queryString["detectOrientation "] = "true";
             var uri = "https://westus.api.cognitive.microsoft.com/vision/v1.0/ocr?" + queryString;
-            
+
             using (var content = new ByteArrayContent(byteData))
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
@@ -68,12 +68,18 @@ namespace TogetherPaaS
                 {
                     if (!string.IsNullOrEmpty(documentNumber))
                     {
-                        if (documentNumber.ToLower().Contains("dl"))
+                        if (documentNumber.ToLower().Contains("dl") || documentNumber.ToLower().Contains("dna"))
                         {
                             custFile.DocumentType = "Driving License";
                         }
-
-                        custFile.DocumentNumber = documentNumber;
+                        if (documentNumber.ToLower().Contains("dna"))
+                        {
+                            custFile.DocumentNumber = "NA";
+                        }
+                        else
+                        {
+                            custFile.DocumentNumber = documentNumber;
+                        }
                         return custFile;
                     }
 
@@ -86,7 +92,17 @@ namespace TogetherPaaS
                         else if (!string.IsNullOrEmpty(documentNumber) && documentNumber.ToString().ToLower().Contains("dl no"))
                         {
                             documentNumber += word.text.ToString() + " ";
-
+                        }
+                        else if (word.text.ToString().ToLower().Contains(ContentType.Driving.ToString().ToLower()))
+                        {
+                            custFile.DocumentType = "Driving License";
+                            documentNumber = "DNA";
+                        }
+                        else if (word.text.ToString().ToLower().Contains(ContentType.Passport.ToString().ToLower()))
+                        {
+                            custFile.DocumentNumber = "NA";
+                            custFile.DocumentType = "Passport";
+                            return custFile;
                         }
 
                         //if (word.text.ToString().ToLower().Contains(ContentType.Passport.ToString().ToLower()))
