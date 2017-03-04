@@ -38,13 +38,14 @@
             @Html.ValidationMessageFor(model => model.LastName)
         </div>
         <div class="editor-label">
-          <label>Files:</label>
+          <label>Files: <b> <font color="red"> (Currently Supported Image Type Only) </font> </b></label> 
         </div>
         <div class="editor-field">
             <input type="file" name="file" multiple="multiple" />
         </div>
+       
         <p>
-            <input type="submit" value="Create" />
+           <input type="submit" value="Create" />
         </p>
         <p>
           <b>@ViewBag.Status </b>  
@@ -52,8 +53,10 @@
     </fieldset>
 }
 
+</br>
+
 <div>
-    @Html.ActionLink("Back to List", "Index")
+    @Html.ActionLink("Go to Home Page","Index","Home")
 </div>
 
 @section Scripts {
