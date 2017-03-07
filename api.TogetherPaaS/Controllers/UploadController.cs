@@ -105,12 +105,17 @@ namespace api.TogetherPaaS.Controllers
             //container.CreateIfNotExists();
 
             // Retrieve a case directory created for broker.
-            CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
-                        
+            //CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
+
+
+            //foreach (var item in customer.LegalDocuments)
+            //{
+            //    item.StoragePath = UploadBlob(caseDirectory, item);
+            //}
 
             foreach (var item in customer.LegalDocuments)
             {
-                item.StoragePath = UploadBlob(caseDirectory, item);
+                item.StoragePath = UploadBlob(container, item, customer.CaseId);
             }
 
             bool status = SqlDBRepository.InsertCustomer(customer);
@@ -137,12 +142,17 @@ namespace api.TogetherPaaS.Controllers
             CloudBlobContainer container = GetContainer();
 
             // Retrieve a case directory created for broker.
-            CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
+            //CloudBlobDirectory caseDirectory = container.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
 
+
+            //foreach (var item in customer.LegalDocuments)
+            //{
+            //    item.StoragePath = UploadBlob(caseDirectory, item);
+            //}
 
             foreach (var item in customer.LegalDocuments)
             {
-                item.StoragePath = UploadBlob(caseDirectory, item);
+                item.StoragePath = UploadBlob(container, item, customer.CaseId);
             }
 
             bool status = SqlDBRepository.UpdateCustomer(customer);
@@ -241,9 +251,6 @@ namespace api.TogetherPaaS.Controllers
             return Ok(custFile);
 
         }
-
-        
-
         private static string UploadBlob(CloudBlobDirectory caseDirectory, LegalDocument legalDocument)
         {
 
@@ -255,43 +262,21 @@ namespace api.TogetherPaaS.Controllers
 
             return azureuri;
             
-            //blockBlob.UploadFromByteArray(legalDocument.DocumentData, 0, 1);
-
-            //Byte Array
-            //using (var stream = new MemoryStream(saveCasePOCRequest.FileStream, writable: false))
-
-            //MemoryStream fstream = new System.IO.MemoryStream();
-
-            //using (var stream = System.IO.File.OpenRead(saveCasePOCRequest.FilePath))
-            //{
-            //    blockBlob.UploadFromStream(stream);
-            //}
         }
 
-        //private static string DeleteCaseBlob(CloudBlobDirectory caseDirectory, string CaseId, LegalDocument legalDocument)
-        //{
+        private static string UploadBlob(CloudBlobContainer container, LegalDocument legalDocument, string caseNo)
+        {
 
-        //    CloudBlockBlob blockBlob = caseDirectory.GetBlockBlobReference(CaseId.ToString() + "_" + legalDocument.DocumentType);
-        //    Stream stream = new MemoryStream(legalDocument.DocumentData);
-        //    blockBlob.UploadFromStream(stream);
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference("case" + caseNo + "$" +legalDocument.Id.ToString() + "_" + legalDocument.DocumentType);
+            Stream stream = new MemoryStream(legalDocument.DocumentData);
+            blockBlob.UploadFromStream(stream);
 
-        //    string azureuri = blockBlob.Uri.AbsoluteUri.ToString();
+            string azureuri = blockBlob.Uri.AbsoluteUri.ToString().Replace('$','/');
 
-        //    return azureuri;
+            return azureuri;
 
-        //    //blockBlob.UploadFromByteArray(legalDocument.DocumentData, 0, 1);
-
-        //    //Byte Array
-        //    //using (var stream = new MemoryStream(saveCasePOCRequest.FileStream, writable: false))
-
-        //    //MemoryStream fstream = new System.IO.MemoryStream();
-
-        //    //using (var stream = System.IO.File.OpenRead(saveCasePOCRequest.FilePath))
-        //    //{
-        //    //    blockBlob.UploadFromStream(stream);
-        //    //}
-        //}
-
+        }
+        
         private async Task<Customer> ProcessClientData()
         {
             Customer customer = new Customer();
@@ -342,45 +327,13 @@ namespace api.TogetherPaaS.Controllers
 
             // Retrieve a directory created for broker.
             CloudBlobContainer brokercontainer = blobClient.GetContainerReference("broker");
+            //CloudBlobContainer brokercontainer = blobClient.GetContainerReference("dummy");
 
             // Create the container if it doesn't already exist.
             brokercontainer.CreateIfNotExists();
 
             return brokercontainer;
 
-            //// Create the container if it doesn't already exist.
-            //brokercontainer.CreateIfNotExists();
-
-            //// Retrive the blob directory
-            //CloudBlobDirectory caseDirectory = brokercontainer.GetDirectoryReference("case" + customer.CaseId.ToString().ToLower());
-
-
-
-            //CloudBlobContainer container = blobClient.GetContainerReference("case" + customer.CaseId.ToString().ToLower());
-            //return container;
         }
-
-        //private static CloudBlobContainer GetContainer()
-        //{
-        //    // Retrieve storage account from connection string.
-        //    CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
-
-        //    // Create the blob client.
-        //    CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-
-        //    // Retrieve a reference to a container.
-        //    CloudBlobContainer container = blobClient.GetContainerReference("leagadocuments");
-
-        //    // Create the container if it doesn't already exist.
-        //    container.CreateIfNotExists();
-
-        //    return container;
-        //    //container.SetPermissions(
-        //    //    new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
-
-        //}
-
-
-        
     }
 }
