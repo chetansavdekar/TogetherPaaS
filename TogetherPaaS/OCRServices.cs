@@ -60,6 +60,7 @@ namespace TogetherPaaS
             OCR ocrObj = JsonConvert.DeserializeObject<OCR>(jsonStr);
             CustomerFile custFile = new CustomerFile();
             string documentNumber = string.Empty;
+            bool ukregion = false;
             //string dlNumber = string.Empty;
 
             foreach (var region in ocrObj.regions)
@@ -72,6 +73,7 @@ namespace TogetherPaaS
                         {
                             custFile.DocumentType = "Driving License";
                         }
+
                         if (documentNumber.ToLower().Contains("dna"))
                         {
                             custFile.DocumentNumber = "NA";
@@ -85,7 +87,7 @@ namespace TogetherPaaS
 
                     foreach (var word in line.words)
                     {
-                        if (word.text.ToString().ToLower().Contains("dl") || word.text.ToString().ToLower().Contains("no"))
+                        if (word.text.ToString().ToLower().Contains("dl") || word.text.ToString().ToLower().Contains("no")|| ukregion)
                         {
                             documentNumber += word.text.ToString() + " ";
                         }
@@ -96,7 +98,13 @@ namespace TogetherPaaS
                         else if (word.text.ToString().ToLower().Contains(ContentType.Driving.ToString().ToLower()))
                         {
                             custFile.DocumentType = "Driving License";
-                            documentNumber = "DNA";
+                            //documentNumber = "DNA";
+                        }
+                        else if (word.text.ToString().ToLower().Contains("9."))
+                        {
+                            custFile.DocumentType = "Driving License";
+                            ukregion = true;
+                            //documentNumber = "DNA";
                         }
                         else if (word.text.ToString().ToLower().Contains(ContentType.Passport.ToString().ToLower()))
                         {
