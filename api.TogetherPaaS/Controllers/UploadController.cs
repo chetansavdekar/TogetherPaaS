@@ -266,13 +266,34 @@ namespace api.TogetherPaaS.Controllers
 
         private static string UploadBlob(CloudBlobContainer container, LegalDocument legalDocument, string caseNo)
         {
-
-            CloudBlockBlob blockBlob = container.GetBlockBlobReference("case" + caseNo + "$" +legalDocument.Id.ToString() + "_" + legalDocument.DocumentType);
+            string blockreference = "case" + caseNo + "$" + legalDocument.FileName + "$" + legalDocument.DocumentNumber + "$" + legalDocument.Id.ToString() + "_" + legalDocument.DocumentType;
+            
+            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blockreference);
+            
             Stream stream = new MemoryStream(legalDocument.DocumentData);
+
+            //try
+            //{
+            //    //set metadata
+            //    blockBlob.Metadata.Clear();
+            //    blockBlob.Metadata["fileName"]= legalDocument.FileName;
+            //    blockBlob.Metadata["documentNumber"]= legalDocument.DocumentNumber;
+            //    blockBlob.Metadata["documentType"]= legalDocument.DocumentType;
+            //    blockBlob.SetMetadata();
+            //    //
+            //}
+            //catch (Exception ex)
+            //{
+
+            //    throw;
+            //}
+
+
             blockBlob.UploadFromStream(stream);
 
-            string azureuri = blockBlob.Uri.AbsoluteUri.ToString().Replace('$','/');
-
+            string[] arrayuri = blockBlob.Uri.AbsoluteUri.ToString().Split('$');//  Replace('$', '/');
+            string azureuri = arrayuri[0] + "/"+  arrayuri[3];
+                        
             return azureuri;
 
         }

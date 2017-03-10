@@ -69,14 +69,14 @@ namespace TogetherPaaS
                 {
                     if (!string.IsNullOrEmpty(documentNumber))
                     {
-                        if (documentNumber.ToLower().Contains("dl") || documentNumber.ToLower().Contains("dna"))
+                        if (documentNumber.ToLower().Contains("dl") ) //|| documentNumber.ToLower().Contains("dna"))
                         {
                             custFile.DocumentType = "Driving License";
                         }
 
                         if (documentNumber.ToLower().Contains("dna"))
                         {
-                            custFile.DocumentNumber = "NA";
+                            custFile.DocumentNumber = "None";
                         }
                         else
                         {
@@ -108,8 +108,14 @@ namespace TogetherPaaS
                         }
                         else if (word.text.ToString().ToLower().Contains(ContentType.Passport.ToString().ToLower()))
                         {
-                            custFile.DocumentNumber = "NA";
+                            custFile.DocumentNumber = "Reject";
                             custFile.DocumentType = "Passport";
+                            return custFile;
+                        }
+                        else if (word.text.ToString().ToLower().Contains("statement") || word.text.ToString().ToLower().Contains("deb"))
+                        {
+                            custFile.DocumentNumber = "Reject";
+                            custFile.DocumentType = "Bank Statment";
                             return custFile;
                         }
 
@@ -127,8 +133,8 @@ namespace TogetherPaaS
                 }
             }
 
-            custFile.DocumentType = "NA";
-            custFile.DocumentNumber = "NA";
+            custFile.DocumentType = "None";
+            custFile.DocumentNumber = "Reject";
 
             return custFile;
         }
