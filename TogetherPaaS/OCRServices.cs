@@ -112,10 +112,10 @@ namespace TogetherPaaS
                             custFile.DocumentType = "Passport";
                             return custFile;
                         }
-                        else if (word.text.ToString().ToLower().Contains("statement") || word.text.ToString().ToLower().Contains("deb"))
+                        else if (word.text.ToString().ToLower().Contains("statement") || word.text.ToString().ToLower().Contains("bank"))
                         {
                             custFile.DocumentNumber = "Reject";
-                            custFile.DocumentType = "Bank Statment";
+                            custFile.DocumentType = "Bank Statement";
                             return custFile;
                         }
 
